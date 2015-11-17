@@ -10,18 +10,32 @@
     <TextView android:text="Hello Loclock!" android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:textSize="24sp"
-        android:layout_marginBottom="40dp"
+        />
+
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="0.3"
         />
 
     <TextView android:text="Username:" android:layout_width="wrap_content"
         android:layout_height="wrap_content" />
 
     <EditText
+        android:id="@+id/username_edittext"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginBottom="40dp"/>
+        android:layout_height="wrap_content" />
+
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="0.3"
+        />
 
     <CheckBox
+        android:id="@+id/share_location_checkbox"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="share your location"/>
@@ -33,7 +47,8 @@
         />
 
     <Button
+        android:id="@+id/save_button"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Save"/>
+        android:text="Save and exit"/>
 </LinearLayout>
