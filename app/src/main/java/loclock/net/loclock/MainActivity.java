@@ -1,5 +1,6 @@
 package loclock.net.loclock;
 
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.preference.PreferenceManager;
 import android.support.v7.app.AppCompatActivity;
@@ -38,7 +39,10 @@ public class MainActivity extends AppCompatActivity {
 
                 e.commit();
 
-                //TODO: trigger service
+                if(shareLocationCheckBox.isChecked()) {
+                    //trigger the service to share location right after saving
+                    startService(new Intent(MainActivity.this, BackgroundService.class));
+                }
 
                 finish();
             }
