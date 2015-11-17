@@ -6,6 +6,8 @@ import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.location.Location;
+import android.location.LocationManager;
 import android.preference.PreferenceManager;
 import android.util.Log;
 
@@ -14,6 +16,8 @@ import android.util.Log;
  */
 public class BackgroundService extends IntentService {
 
+    public static final int SHARE_PERIOD_MILLIS = 1000;
+
     public BackgroundService(){
         super("loclock background service");
     }
@@ -21,9 +25,29 @@ public class BackgroundService extends IntentService {
 
     @Override
     protected void onHandleIntent(Intent intent) {
+        Log.d("loclock", "service invoked");
+
+        LocationManager lm = (LocationManager)getSystemService(LOCATION_SERVICE);
+
+        Location loc;
+        try {
+            loc = lm.getLastKnownLocation(LocationManager.GPS_PROVIDER);
+        }catch (SecurityException e){
+            Log.d("loclock", "no permissions to obtain location");
+            return;
+        }
+
+        if(loc == null){
+            Log.d("loclock", "last location is unknown");
+            return;
+        }
+
+        Log.d("loclock", "last known location: lon= " + loc.getLongitude() + " lat = " + loc.getLatitude());
+
         //TODO: share location to server
 
-        Log.d("loclock", "service invoked");
+
+
 
 
         //Set the timer for next execution if location sharing is enabled
@@ -34,7 +58,7 @@ public class BackgroundService extends IntentService {
 
             am.set(
                     AlarmManager.RTC_WAKEUP,
-                    System.currentTimeMillis() + 1000,
+                    System.currentTimeMillis() + SHARE_PERIOD_MILLIS,
                     PendingIntent.getService(
                             getApplicationContext(),
                             0,
