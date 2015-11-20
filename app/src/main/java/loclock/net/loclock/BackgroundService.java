@@ -16,6 +16,12 @@ import android.os.Looper;
 import android.preference.PreferenceManager;
 import android.util.Log;
 
+import java.io.BufferedReader;
+import java.io.DataOutputStream;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.logging.Handler;
@@ -26,7 +32,7 @@ import java.util.logging.LogRecord;
  */
 public class BackgroundService extends IntentService {
 
-    public static final int SHARE_PERIOD_MILLIS = 1000;
+    public static final int SHARE_PERIOD_MILLIS = 15 * 60 * 1000;
 
     public static  final int LOCATION_TIMEOUT = 5 * 60 * 1000;
 
@@ -86,9 +92,9 @@ public class BackgroundService extends IntentService {
 
                     lm.removeUpdates(locationListener);
                 }catch(SecurityException e){
+                }finally {
+                    timer.cancel();
                 }
-
-                timer.cancel();
             }
         };
         thread.start();
@@ -98,18 +104,58 @@ public class BackgroundService extends IntentService {
             return;
         }
 
+        SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
+
         if(loc != null) {
             Log.d("loclock", "sending location to server: lon= " + loc.getLongitude() + " lat = " + loc.getLatitude() + " acc = " + loc.getAccuracy());
 
-            //TODO: share location to server
+            String json = "{\"lat\":" +loc.getLatitude() + ", \"lng\":" + loc.getLongitude() + "}";
 
+            //share location to server
+            HttpURLConnection connection = null;
+            try {
+                //Create connection
+                URL url = new URL("http://loclock.net/api/users/" + sp.getString(MainActivity.KEY_USERNAME, ""));
+                connection = (HttpURLConnection)url.openConnection();
+                connection.setRequestMethod("POST");
+                connection.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
+                connection.setRequestProperty("Content-Length", "" + Integer.toString(json.getBytes().length));
+                connection.setRequestProperty("Content-Language", "en-US");
+
+                connection.setUseCaches(false);
+                connection.setDoInput(true);
+                connection.setDoOutput(true);
+
+                //Send request
+                DataOutputStream wr = new DataOutputStream(connection.getOutputStream());
+                wr.writeBytes(json);
+                wr.flush();
+                wr.close();
+
+                //Get Response	
+                InputStream is = connection.getInputStream();
+                BufferedReader rd = new BufferedReader(new InputStreamReader(is));
+                String line;
+                StringBuffer response = new StringBuffer();
+                while((line = rd.readLine()) != null) {
+                    response.append(line);
+                    response.append('\r');
+                }
+                rd.close();
+
+                Log.d("loclock", "server response: " + response.toString());
+            } catch (Exception e) {
+                e.printStackTrace();
+            }finally{
+                if(connection != null){
+                    connection.disconnect();
+                }
+            }
         }else{
             Log.d("loclock", "failed to get location in 5 minutes");
         }
 
         //Set the timer for next execution if location sharing is enabled
-        SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
-
         if(sp.getBoolean(MainActivity.KEY_SHARE_ENABLED, false)) {
             AlarmManager am = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
 
